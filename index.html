@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YiKi Calculator - Node & Tailwind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        html, body {
+            height: 100%; /* Ensures the gradient or background covers full page */
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-sky-600 via-indigo-600 to-purple-700 flex flex-col items-center justify-center min-h-screen p-4 selection:bg-sky-300 selection:text-sky-900">
+
+    <div class="bg-white/90 backdrop-blur-md p-6 sm:p-10 rounded-xl shadow-2xl w-full max-w-lg transform transition-all hover:scale-[1.01]">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-700 mb-8">
+            คำนวนหวยยี่กี
+        </h1>
+
+        <form id="yikiForm" class="space-y-6">
+            <div>
+                <label for="longNumberInput" class="block text-sm font-semibold text-gray-700 mb-1">
+                    ใส่ผลรางวัลเต็ม 
+                </label>
+                <input type="text" id="longNumberInput" name="longNumber"
+                       class="mt-1 block w-full px-4 py-3.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-colors"
+                       placeholder="ตัวเลขรางวัลล่าสุด" required>
+            </div>
+
+            <button type="submit"
+                    class="w-full flex justify-center py-3.5 px-5 border border-transparent rounded-lg shadow-lg text-base font-medium text-white bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 active:scale-95 transition-transform">
+                คำนวน
+            </button>
+        </form>
+
+        <div id="responseContainer" class="mt-10">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Response:</h2>
+            <div id="responseArea"
+                 class="bg-slate-50 p-5 rounded-lg border border-slate-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner">
+                Awaiting input...
+            </div>
+        </div>
+         <p class="text-center text-xs text-gray-500 mt-8">
+            Note: มีการคำนวนเลขเด่นจากผลรางวัลยี่กีล่าสุดเพื่อใช้ในการทำนายเลขในรอบถัดไป 
+        </p>
+    </div>
+
+    <script>
+        const yikiForm = document.getElementById('yikiForm');
+        const longNumberInput = document.getElementById('longNumberInput');
+        const responseArea = document.getElementById('responseArea');
+
+        yikiForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const longNumber = longNumberInput.value.trim();
+
+            if (!longNumber) {
+                responseArea.textContent = 'Please enter the full prize number.';
+                responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+                return;
+            }
+
+            responseArea.textContent = 'Calculating...';
+            responseArea.className = 'bg-blue-50 p-5 rounded-lg border border-blue-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-blue-700';
+
+
+            try {
+                // The HTML page is served by the same Express server,
+                // so we can use a relative path for the API endpoint.
+                const response = await fetch('/calculate-yiki', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ longNumber: longNumber }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    responseArea.textContent = `Error: ${data.error || response.statusText || 'Unknown server error'}`;
+                    responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+                } else {
+                    let outputText = `Formula Used: ${data.formulaUsed}\n\n`;
+                    outputText += `Input Analysis:\n`;
+                    outputText += `  Original Long Number: ${data.inputReceived.longNumber}\n`;
+                    outputText += `  Derived 3-Top (สามตัวบน): ${data.inputReceived.derivedThreeTop}\n`;
+                    outputText += `  Derived 2-Bottom (สองตัวล่าง): ${data.inputReceived.derivedTwoBottom}\n\n`;
+                    outputText += `Example Predict Numbers for Next Round:\n`;
+                    outputText += `  Predict Number 1 (เลขเด่นตัวแรก): ${data.predictNumber1}\n`;
+                    outputText += `  Predict Number 2 (เลขเด่นตัวที่สอง): ${data.predictNumber2}`;
+                    
+                    responseArea.textContent = outputText;
+                    responseArea.className = 'bg-green-50 p-5 rounded-lg border border-green-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-green-800';
+                }
+
+            } catch (error) {
+                console.error('Fetch error:', error);
+                responseArea.textContent = 'Failed to connect to the server or a client-side error occurred. Check console for details.';
+                responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+            }
+        });
+    </script>
+</body>
+</html>
