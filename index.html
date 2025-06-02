@@ -3,71 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YiKi Calculator - Node & Tailwind</title>
+    <title>YiKi Single Output Calculator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        html, body {
-            height: 100%; /* Ensures the gradient or background covers full page */
-        }
+        html, body { height: auto; min-height: 100%; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-sky-600 via-indigo-600 to-purple-700 flex flex-col items-center justify-center min-h-screen p-4 selection:bg-sky-300 selection:text-sky-900">
+<body class="bg-gradient-to-br from-purple-500 via-pink-500 to-red-600 flex flex-col items-center py-8 px-4 selection:bg-pink-300 selection:text-pink-900">
 
-    <div class="bg-white/90 backdrop-blur-md p-6 sm:p-10 rounded-xl shadow-2xl w-full max-w-lg transform transition-all hover:scale-[1.01]">
-        <h1 class="text-3xl sm:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-sky-500 to-indigo-700 mb-8">
-            คำนวนหวยยี่กี
+    <div class="bg-white/95 backdrop-blur-lg p-6 sm:p-10 rounded-xl shadow-2xl w-full max-w-lg md:max-w-2xl transform transition-all hover:scale-[1.01]">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-red-700 mb-8">
+            YiKi Single Output Calculator
         </h1>
 
         <form id="yikiForm" class="space-y-6">
             <div>
                 <label for="longNumberInput" class="block text-sm font-semibold text-gray-700 mb-1">
-                    ใส่ผลรางวัลเต็ม 
+                    Enter Full Prize Number (ผลรางวัลเต็ม):
                 </label>
                 <input type="text" id="longNumberInput" name="longNumber"
-                       class="mt-1 block w-full px-4 py-3.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 sm:text-sm transition-colors"
-                       placeholder="ตัวเลขรางวัลล่าสุด" required>
+                       class="mt-1 block w-full px-4 py-3.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-pink-500 focus:border-pink-500 sm:text-sm transition-colors"
+                       placeholder="e.g., 14807591" required>
             </div>
 
             <button type="submit"
-                    class="w-full flex justify-center py-3.5 px-5 border border-transparent rounded-lg shadow-lg text-base font-medium text-white bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 active:scale-95 transition-transform">
-                คำนวน
+                    class="w-full flex justify-center py-3.5 px-5 border border-transparent rounded-lg shadow-lg text-base font-medium text-white bg-gradient-to-r from-pink-500 to-red-600 hover:from-pink-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500 active:scale-95 transition-transform">
+                Calculate Single Output Numbers
             </button>
         </form>
 
         <div id="responseContainer" class="mt-10">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-3">Response:</h2>
+            <h2 class="text-2xl font-semibold text-gray-800 mb-1">Response:</h2>
+            <p id="targetDescriptionArea" class="text-sm text-gray-600 mb-3"></p>
             <div id="responseArea"
-                 class="bg-slate-50 p-5 rounded-lg border border-slate-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner">
-                Awaiting input...
+                 class="bg-slate-50 p-1 sm:p-3 rounded-lg border border-slate-200 text-sm min-h-[120px] shadow-inner overflow-x-auto">
+                <div id="inputAnalysisArea" class="font-mono p-3 mb-3 border-b border-slate-200">Awaiting input...</div>
+                <div id="predictionsOutputContainer"></div>
             </div>
         </div>
          <p class="text-center text-xs text-gray-500 mt-8">
-            Note: มีการคำนวนเลขเด่นจากผลรางวัลยี่กีล่าสุดเพื่อใช้ในการทำนายเลขในรอบถัดไป 
+            Note: Calculations are for educational purposes and not predictions.
         </p>
     </div>
 
     <script>
         const yikiForm = document.getElementById('yikiForm');
         const longNumberInput = document.getElementById('longNumberInput');
+        const inputAnalysisArea = document.getElementById('inputAnalysisArea');
+        const predictionsOutputContainer = document.getElementById('predictionsOutputContainer');
         const responseArea = document.getElementById('responseArea');
+        const targetDescriptionArea = document.getElementById('targetDescriptionArea');
 
         yikiForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             const longNumber = longNumberInput.value.trim();
 
+            inputAnalysisArea.innerHTML = '';
+            predictionsOutputContainer.innerHTML = '';
+            targetDescriptionArea.textContent = '';
+            responseArea.className = 'bg-slate-50 p-1 sm:p-3 rounded-lg border border-slate-200 text-sm min-h-[120px] shadow-inner overflow-x-auto';
+
             if (!longNumber) {
-                responseArea.textContent = 'Please enter the full prize number.';
-                responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+                inputAnalysisArea.innerHTML = '<span class="text-red-700 font-semibold">Please enter the full prize number.</span>';
                 return;
             }
 
-            responseArea.textContent = 'Calculating...';
-            responseArea.className = 'bg-blue-50 p-5 rounded-lg border border-blue-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-blue-700';
-
+            inputAnalysisArea.innerHTML = '<span class="text-blue-700 font-semibold">Calculating...</span>';
 
             try {
-                // The HTML page is served by the same Express server,
-                // so we can use a relative path for the API endpoint.
                 const response = await fetch('/calculate-yiki', {
                     method: 'POST',
                     headers: {
@@ -79,26 +82,47 @@
                 const data = await response.json();
 
                 if (!response.ok || data.error) {
-                    responseArea.textContent = `Error: ${data.error || response.statusText || 'Unknown server error'}`;
-                    responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+                    inputAnalysisArea.innerHTML = `<span class="text-red-700 font-semibold">Error: ${data.error || response.statusText || 'Unknown server error'}</span>`;
                 } else {
-                    let outputText = `Formula Used: ${data.formulaUsed}\n\n`;
-                    outputText += `Input Analysis:\n`;
-                    outputText += `  Original Long Number: ${data.inputReceived.longNumber}\n`;
-                    outputText += `  Derived 3-Top (สามตัวบน): ${data.inputReceived.derivedThreeTop}\n`;
-                    outputText += `  Derived 2-Bottom (สองตัวล่าง): ${data.inputReceived.derivedTwoBottom}\n\n`;
-                    outputText += `Example Predict Numbers for Next Round:\n`;
-                    outputText += `  Predict Number 1 (เลขเด่นตัวแรก): ${data.predictNumber1}\n`;
-                    outputText += `  Predict Number 2 (เลขเด่นตัวที่สอง): ${data.predictNumber2}`;
-                    
-                    responseArea.textContent = outputText;
-                    responseArea.className = 'bg-green-50 p-5 rounded-lg border border-green-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-green-800';
+                    targetDescriptionArea.textContent = data.targetDescription || '';
+                    let analysisHTML = `<div class="text-gray-700"><strong>Input Analysis:</strong></div>`;
+                    analysisHTML += `<div class="pl-4 text-gray-600">`;
+                    analysisHTML += `  Original Long Number: ${data.inputReceived.longNumber}<br>`;
+                    analysisHTML += `  Derived 3-Top: ${data.inputReceived.derivedThreeTop}<br>`;
+                    analysisHTML += `  Derived 2-Bottom: ${data.inputReceived.derivedTwoBottom}`;
+                    analysisHTML += `</div>`;
+                    inputAnalysisArea.innerHTML = analysisHTML;
+
+                    if (data.predictions && data.predictions.length > 0) {
+                        let tableHTML = `<div class="mt-4 text-red-800"><strong>Example Single Output Predictions:</strong></div>`;
+                        tableHTML += `<div class="overflow-x-auto mt-2">`;
+                        tableHTML += `<table class="min-w-full divide-y divide-gray-300 border border-gray-200 shadow-sm rounded-md">`;
+                        tableHTML += `<thead class="bg-gray-100">`;
+                        tableHTML += `<tr>
+                                        <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Formula Name (ชื่อสูตร)</th>
+                                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">Predict Number (เลขเด่น)</th>
+                                      </tr>`;
+                        tableHTML += `</thead>`;
+                        tableHTML += `<tbody class="bg-white divide-y divide-gray-200">`;
+
+                        data.predictions.forEach(p => {
+                            tableHTML += `<tr>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${p.formulaName}</td>
+                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-red-700 font-semibold text-center">${p.predictNumber}</td>
+                                          </tr>`;
+                        });
+
+                        tableHTML += `</tbody></table></div>`;
+                        predictionsOutputContainer.innerHTML = tableHTML;
+                        responseArea.className = 'bg-slate-50 p-1 sm:p-3 rounded-lg border border-red-300 text-sm min-h-[120px] shadow-inner overflow-x-auto';
+                    } else {
+                        predictionsOutputContainer.innerHTML = '<span class="text-gray-700">No predictions generated.</span>';
+                    }
                 }
 
             } catch (error) {
                 console.error('Fetch error:', error);
-                responseArea.textContent = 'Failed to connect to the server or a client-side error occurred. Check console for details.';
-                responseArea.className = 'bg-red-50 p-5 rounded-lg border border-red-200 text-sm font-mono whitespace-pre-wrap break-words min-h-[120px] shadow-inner text-red-700';
+                inputAnalysisArea.innerHTML = '<span class="text-red-700 font-semibold">Failed to connect to the server or a client-side error occurred. Check console.</span>';
             }
         });
     </script>
