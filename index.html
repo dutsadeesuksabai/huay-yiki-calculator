@@ -23,7 +23,7 @@
                 </label>
                 <input type="text" id="longNumberInput" name="longNumber"
                        class="mt-1 block w-full px-4 py-3.5 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 sm:text-sm transition-colors"
-                       placeholder="e.g., 14807591" required>
+                       placeholder="e.g., 14807591 or 1 4 8 0 7 5 9 1" required>
             </div>
 
             <button type="submit"
@@ -80,7 +80,9 @@
 
         yikiForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            const longNumber = longNumberInput.value.trim();
+            
+            // --- Trim spaces from the input value ---
+            const longNumber = longNumberInput.value.replace(/\s+/g, ''); // Removes all spaces
 
             // Reset areas
             inputAnalysisArea.innerHTML = '';
@@ -107,14 +109,14 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ longNumber: longNumber }),
+                    body: JSON.stringify({ longNumber: longNumber }), // Send the trimmed number
                 });
 
                 const data = await response.json();
 
-                if (!response.ok || data.error) { // Check for generic error or specific error from any function
+                if (!response.ok || data.error) {
                     let errorMessage = "Error processing request.";
-                    if (data.error && typeof data.error === 'string') { // Prioritize specific error message from backend
+                    if (data.error && typeof data.error === 'string') {
                         errorMessage = `Error: ${data.error}`;
                     } else if (response.statusText) {
                         errorMessage = `Error: ${response.statusText}`;
@@ -139,26 +141,21 @@
                         runningHTML += `<span class="font-bold text-lime-600 text-xl">${data.singleRunningNumberExample.number}</span>`;
                         runningHTML += `</p>`;
                         singleRunningContainer.innerHTML = runningHTML;
-                    } else {
-                        singleRunningWrapper.classList.add('hidden'); // Hide if no data
                     }
 
-                    // Display Other Single Digit Predictions (Ruud from adapted 2-digit formulas)
+                    // Display Other Single Digit Predictions (Ruud)
                     if (data.singleDigitPredictions && data.singleDigitPredictions.length > 0) {
                         otherSingleDigitWrapper.classList.remove('hidden');
                         let tableHTML = createTableHTML(data.singleDigitPredictions, "Other Ruud Formula (ชื่อสูตรอื่น)", "Predict Number (เลขเด่น)");
                         otherSingleDigitContainer.innerHTML = tableHTML;
-                    } else {
-                        otherSingleDigitWrapper.classList.add('hidden');
                     }
 
-                    // Display 3-Top Set Predictions
+                    // --- ADDED LOGIC: Display 3-Top Set Predictions ---
                     if (data.threeTopSets && data.threeTopSets.length > 0) {
                         threeTopWrapper.classList.remove('hidden');
+                        // Use the generic table creation function to display the results
                         let tableHTML = createTableHTML(data.threeTopSets, "3-Top Set Name (ชื่อชุดสูตร)", "Predicted 3-Top (เลข 3 ตัวบน)", true);
                         threeTopContainer.innerHTML = tableHTML;
-                    } else {
-                        threeTopWrapper.classList.add('hidden');
                     }
                 }
 
@@ -180,7 +177,8 @@
                           </tr></thead>`;
             tableHTML += `<tbody class="bg-white divide-y divide-gray-200">`;
             predictionsArray.forEach(p => {
-                const value = is3Top ? p.predicted3Top : p.predictNumber;
+                // Determine the correct value and name keys based on the data structure
+                const value = is3Top ? p.predicted3Top : p.predictNumber !== undefined ? p.predictNumber : p.runningNumber;
                 const name = is3Top ? p.setName : p.formulaName;
                 tableHTML += `<tr>
                                 <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${name}</td>
